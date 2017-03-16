@@ -37,11 +37,15 @@ export const ActionTypes = {
  * and subscribe to changes.
  */
 export default function createStore(reducer, preloadedState, enhancer) {
+ // 1. 若preloadedState为函数，并且enhancer未传入,将preloadedState赋予enhancer，preloadedState置空。
+ // 也就是两个参数时，第二个参数是enhancer。
   if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
     enhancer = preloadedState
     preloadedState = undefined
   }
-
+// 2. 若传入的enhancer不是函数，则提示enhancer应该是函数。
+// 3. enhancer不为空，enhancer(createStore)(reducer, preloadedState)，则是将本身传入enhancer，enhancer
+// 的形式为next => (reducer, preloadedState) => store，这样实际将原生createStore置为最后工序。
   if (typeof enhancer !== 'undefined') {
     if (typeof enhancer !== 'function') {
       throw new Error('Expected the enhancer to be a function.')
@@ -49,11 +53,12 @@ export default function createStore(reducer, preloadedState, enhancer) {
 
     return enhancer(createStore)(reducer, preloadedState)
   }
-
+// 4. reducer不是函数，提示reducer应该为函数。
   if (typeof reducer !== 'function') {
     throw new Error('Expected the reducer to be a function.')
   }
-
+// 5. 将reducer和preloadedState使用currentReducer，currentState保存。isDispatching
+// 标识是否正在分发，默认为false。
   let currentReducer = reducer
   let currentState = preloadedState
   let currentListeners = []
@@ -242,6 +247,8 @@ export default function createStore(reducer, preloadedState, enhancer) {
   // When a store is created, an "INIT" action is dispatched so that every
   // reducer returns their initial state. This effectively populates
   // the initial state tree.
+  
+  // 6. 分发`{ type: ActionTypes.INIT }`的action
   dispatch({ type: ActionTypes.INIT })
 
   return {
